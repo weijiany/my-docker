@@ -8,8 +8,7 @@ import (
 )
 
 func newParentProcess(tty bool, command string) *exec.Cmd {
-	args := []string{"init", command}
-	cmd := exec.Command("/proc/self/exe", args...)
+	cmd := exec.Command("unshare", "--fork", "--pid", "--mount-proc=/proc", command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | // Unix Timesharing System 用于隔离和管理主机的主机名和域名信息
 			syscall.CLONE_NEWPID | // Process Identifier 用于隔离和管理进程的标识符（PID）
@@ -17,6 +16,7 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 			syscall.CLONE_NEWNET | // Network Namespace 用于隔离和管理网络栈和网络资源
 			syscall.CLONE_NEWIPC, // Inter-Process Communication 用于隔离和管理进程间通信的资源，如消息队列、信号量和共享内存等
 	}
+	cmd.Env = os.Environ()
 	if tty {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
