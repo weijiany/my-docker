@@ -32,20 +32,13 @@ func Run(tty bool, command string) {
 		log.Error(err.Error())
 		os.Exit(-1)
 	}
-	mss := subsystems.MemorySubSystem{}
-	defer func(mss *subsystems.MemorySubSystem, cgroupPath string) {
-		err := mss.Remove(cgroupPath)
-		if err != nil {
-			log.Errorf("remove: %v", err)
-		}
-	}(&mss, "mydocker-cgroup")
-	err := mss.Set("mydocker-cgroup", &subsystems.ResourceConfig{MemoryLimit: "5m"})
-	if err != nil {
-		log.Errorf("set: %v", err)
-	}
-	err = mss.Apply("mydocker-cgroup", parent.Process.Pid)
-	if err != nil {
-		log.Errorf("apply: %v", err)
-	}
+	cm := subsystems.NewCgroupManager("mydocker-cgroup")
+	defer cm.Destroy()
+	cm.Set(&subsystems.ResourceConfig{
+		CpuShare:    "512",
+		MemoryLimit: "5m",
+	})
+	cm.Apply(parent.Process.Pid)
+
 	parent.Wait()
 }
