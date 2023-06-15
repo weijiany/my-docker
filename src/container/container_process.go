@@ -32,12 +32,12 @@ func Run(tty bool, command string) {
 		log.Error(err.Error())
 		os.Exit(-1)
 	}
-	cm := subsystems.NewCgroupManager("mydocker-cgroup")
-	defer cm.Destroy()
-	cm.Set(&subsystems.ResourceConfig{
+	cm := subsystems.NewCgroupManager("mydocker-cgroup", &subsystems.ResourceConfig{
 		CpuShare:    "512",
 		MemoryLimit: "5m",
 	})
+	defer cm.Destroy()
+	cm.Set()
 	cm.Apply(parent.Process.Pid)
 
 	parent.Wait()
