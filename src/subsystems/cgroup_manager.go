@@ -7,37 +7,17 @@ import (
 	"strconv"
 )
 
-type SubSystem struct {
-	Name     string
-	FileName string
-	Value    string
-}
-
 type CgroupManager struct {
 	CgroupPath string
-	SubSystems []SubSystem
-}
-
-type ResourceConfig struct {
-	MemoryLimit string
-	CpuShare    string
-	CpuSet      string
+	SubSystems []*SubSystem
 }
 
 func NewCgroupManager(cgroupPath string, res *ResourceConfig) *CgroupManager {
 	return &CgroupManager{
 		CgroupPath: cgroupPath,
-		SubSystems: []SubSystem{
-			{
-				Name:     "memory",
-				FileName: "memory.limit_in_bytes",
-				Value:    res.MemoryLimit,
-			},
-			{
-				Name:     "cpu",
-				FileName: "cpu.shares",
-				Value:    res.CpuShare,
-			},
+		SubSystems: []*SubSystem{
+			memoryOf(res),
+			cpuSharesOf(res),
 		},
 	}
 }
