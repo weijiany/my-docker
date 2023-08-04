@@ -26,19 +26,20 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 	return cmd
 }
 
-func Run(tty bool, command string) {
+func Run(tty bool, command string, resourceConfig *subsystems.ResourceConfig) error {
 	parent := newParentProcess(tty, command)
 	if err := parent.Start(); err != nil {
 		log.Error(err.Error())
 		os.Exit(-1)
 	}
-	cm := subsystems.NewCgroupManager("mydocker-cgroup", &subsystems.ResourceConfig{
-		CpuShare:    "512",
-		MemoryLimit: "5m",
-	})
+	cm := subsystems.NewCgroupManager("mydocker-cgroup", resourceConfig)
 	defer cm.Destroy()
 	cm.Set()
 	cm.Apply(parent.Process.Pid)
 
-	parent.Wait()
+	err := parent.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
 }

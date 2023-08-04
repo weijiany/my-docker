@@ -9,7 +9,6 @@ type SubSystem struct {
 type ResourceConfig struct {
 	MemoryLimit string
 	CpuShare    string
-	CpuSet      string
 }
 
 func memoryOf(res *ResourceConfig) *SubSystem {
@@ -26,4 +25,9 @@ func cpuSharesOf(res *ResourceConfig) *SubSystem {
 		FileName: "cpu.shares",
 		Value:    res.CpuShare,
 	}
+}
+
+type SubSystemInput struct {
+	Cpu    string
+	Memory string
 }
