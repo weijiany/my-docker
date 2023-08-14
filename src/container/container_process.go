@@ -4,12 +4,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
+	"weijiany/docker/src/aufs"
 	"weijiany/docker/src/subsystems"
 )
 
 func newParentProcess(tty bool, command string) *exec.Cmd {
-	cmd := exec.Command("unshare", "--fork", "--pid", "--mount-proc=/proc", command)
+	cmd := exec.Command("unshare", "--fork", "--pid", command)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | // Unix Timesharing System 用于隔离和管理主机的主机名和域名信息
 			syscall.CLONE_NEWPID | // Process Identifier 用于隔离和管理进程的标识符（PID）
@@ -27,18 +29,25 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 }
 
 func Run(tty bool, command string, resourceConfig *subsystems.ResourceConfig) error {
+	pwd, _ := os.Getwd()
+	pwd = filepath.Join(pwd, "busybox")
+	if err := aufs.ChangeRoot(pwd); err != nil {
+		return err
+	}
+	defer aufs.Unmount()
+
 	parent := newParentProcess(tty, command)
 	if err := parent.Start(); err != nil {
-		log.Error(err.Error())
-		os.Exit(-1)
+		log.Error("start error: ", err.Error())
+		return err
 	}
+
 	cm := subsystems.NewCgroupManager("mydocker-cgroup", resourceConfig)
 	defer cm.Destroy()
 	cm.Set()
 	cm.Apply(parent.Process.Pid)
 
-	err := parent.Wait()
-	if err != nil {
+	if err := parent.Wait(); err != nil {
 		return err
 	}
 	return nil
