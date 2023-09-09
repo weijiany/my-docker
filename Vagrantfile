@@ -8,6 +8,6 @@ Vagrant.configure("2") do |config|
 
     m.vm.network :private_network, ip: "192.168.56.10"
     m.vm.provision "shell", "path": "init.sh"
-    m.vm.synced_folder ".", "/home/vagrant/app"
+    m.vm.synced_folder ".", "/app"
   end
 end
