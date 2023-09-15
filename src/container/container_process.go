@@ -4,14 +4,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
-	"weijiany/docker/src/aufs"
 	"weijiany/docker/src/subsystems"
 )
 
 func newParentProcess(tty bool, command string) *exec.Cmd {
-	cmd := exec.Command("unshare", "--fork", "--pid", command)
+	args := []string{"init", command}
+	cmd := exec.Command("/proc/self/exe", args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | // Unix Timesharing System 用于隔离和管理主机的主机名和域名信息
 			syscall.CLONE_NEWPID | // Process Identifier 用于隔离和管理进程的标识符（PID）
@@ -19,7 +18,6 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 			syscall.CLONE_NEWNET | // Network Namespace 用于隔离和管理网络栈和网络资源
 			syscall.CLONE_NEWIPC, // Inter-Process Communication 用于隔离和管理进程间通信的资源，如消息队列、信号量和共享内存等
 	}
-	cmd.Env = os.Environ()
 	if tty {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -29,13 +27,6 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 }
 
 func Run(tty bool, command string, resourceConfig *subsystems.ResourceConfig) error {
-	pwd, _ := os.Getwd()
-	pwd = filepath.Join(pwd, "busybox")
-	if err := aufs.ChangeRoot(pwd); err != nil {
-		return err
-	}
-	defer aufs.Unmount()
-
 	parent := newParentProcess(tty, command)
 	if err := parent.Start(); err != nil {
 		log.Error("start error: ", err.Error())
