@@ -1,6 +1,7 @@
 package aufs
 
 import (
+	"fmt"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -41,8 +42,21 @@ func createDir(dirPath string) {
 }
 
 func DeleteWorkSpace(mnt string) {
-	syscall.Unmount(path.Join(baseDir, mnt), syscall.MNT_DETACH)
+	if err := syscall.Unmount(path.Join(baseDir, mnt), syscall.MNT_DETACH); err != nil {
+		log.Errorf("unmount mnt err: %v", err)
+	}
 
-	os.RemoveAll(path.Join(baseDir, mnt))
-	os.RemoveAll(path.Join(baseDir, "write"))
+	if err := os.RemoveAll(path.Join(baseDir, mnt)); err != nil {
+		log.Errorf("remove mnt err: %v", err)
+	}
+	if err := os.RemoveAll(path.Join(baseDir, "write")); err != nil {
+		log.Errorf("remove write err: %v", err)
+	}
+}
+
+func ChangeRoot(mnt string) error {
+	if err := syscall.Chroot(path.Join(baseDir, mnt)); err != nil {
+		return fmt.Errorf("chroot error: %v", err)
+	}
+	return syscall.Chdir("/")
 }

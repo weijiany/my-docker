@@ -6,11 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+	"weijiany/docker/src/aufs"
 	"weijiany/docker/src/mountManager"
 )
 
 func RunContainerInitProcess(cmdArr []string) error {
-	if err := changeRoot("/mydocker/aufs/mnt"); err != nil {
+	if err := aufs.ChangeRoot("mnt"); err != nil {
 		return fmt.Errorf("change root err: %v", err)
 	}
 
@@ -24,11 +25,4 @@ func RunContainerInitProcess(cmdArr []string) error {
 		return err
 	}
 	return syscall.Exec(cmdPath, cmdArr[0:], os.Environ())
-}
-
-func changeRoot(root string) error {
-	if err := syscall.Chroot(root); err != nil {
-		return fmt.Errorf("chroot error: %v", err)
-	}
-	return syscall.Chdir("/")
 }
