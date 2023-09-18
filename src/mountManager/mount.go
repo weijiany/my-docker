@@ -36,10 +36,12 @@ func Mount() error {
 	return nil
 }
 
-func Umount(baseDir string) error {
-	for _, info := range mountInfos {
-		if err := syscall.Unmount(path.Join(baseDir, info.target), syscall.MNT_DETACH); err != nil {
-			return fmt.Errorf("mount %v error: %v", info.target, err)
+func Umount() error {
+	mountTargets := []string{"proc", "sys"}
+
+	for _, info := range mountTargets {
+		if err := syscall.Unmount(path.Join("/mydocker/aufs/mnt", info), syscall.MNT_DETACH); err != nil {
+			return fmt.Errorf("mount %v error: %v", info, err)
 		}
 	}
 	return nil

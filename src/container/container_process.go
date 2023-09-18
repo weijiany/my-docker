@@ -4,8 +4,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"path"
 	"syscall"
+	"weijiany/docker/src/aufs"
 	"weijiany/docker/src/mountManager"
 	"weijiany/docker/src/subsystems"
 )
@@ -25,6 +25,7 @@ func newParentProcess(tty bool, command []string) *exec.Cmd {
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 	}
+	aufs.NewWorkSpace("mnt")
 	return cmd
 }
 
@@ -40,10 +41,8 @@ func Run(tty bool, command []string, resourceConfig *subsystems.ResourceConfig) 
 	cm.Set()
 	cm.Apply(parent.Process.Pid)
 
-	mountManager.Mount()
-	pwd, _ := os.Getwd()
-	rootPath := path.Join(pwd, "busybox")
-	defer mountManager.Umount(rootPath)
+	defer mountManager.Umount()
+	defer aufs.DeleteWorkSpace("mnt")
 
 	if err := parent.Wait(); err != nil {
 		return err

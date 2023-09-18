@@ -5,15 +5,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"path"
 	"syscall"
 	"weijiany/docker/src/mountManager"
 )
 
 func RunContainerInitProcess(cmdArr []string) error {
-	pwd, _ := os.Getwd()
-	rootPath := path.Join(pwd, "busybox")
-	if err := changeRoot(rootPath); err != nil {
+	if err := changeRoot("/mydocker/aufs/mnt"); err != nil {
 		return fmt.Errorf("change root err: %v", err)
 	}
 
