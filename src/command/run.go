@@ -34,9 +34,8 @@ func RunCommand() cli.Command {
 			if len(context.Args()) < 1 {
 				return fmt.Errorf("missing container command")
 			}
-			cmd := context.Args().Get(0)
 			tty := context.Bool("it")
-			return container.Run(tty, cmd, input)
+			return container.Run(tty, context.Args(), input)
 		},
 	}
 }

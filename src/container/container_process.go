@@ -4,12 +4,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"path"
 	"syscall"
+	"weijiany/docker/src/mountManager"
 	"weijiany/docker/src/subsystems"
 )
 
-func newParentProcess(tty bool, command string) *exec.Cmd {
-	args := []string{"init", command}
+func newParentProcess(tty bool, command []string) *exec.Cmd {
+	args := append([]string{"init"}, command...)
 	cmd := exec.Command("/proc/self/exe", args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | // Unix Timesharing System 用于隔离和管理主机的主机名和域名信息
@@ -26,7 +28,7 @@ func newParentProcess(tty bool, command string) *exec.Cmd {
 	return cmd
 }
 
-func Run(tty bool, command string, resourceConfig *subsystems.ResourceConfig) error {
+func Run(tty bool, command []string, resourceConfig *subsystems.ResourceConfig) error {
 	parent := newParentProcess(tty, command)
 	if err := parent.Start(); err != nil {
 		log.Error("start error: ", err.Error())
@@ -37,6 +39,11 @@ func Run(tty bool, command string, resourceConfig *subsystems.ResourceConfig) er
 	defer cm.Destroy()
 	cm.Set()
 	cm.Apply(parent.Process.Pid)
+
+	mountManager.Mount()
+	pwd, _ := os.Getwd()
+	rootPath := path.Join(pwd, "busybox")
+	defer mountManager.Umount(rootPath)
 
 	if err := parent.Wait(); err != nil {
 		return err

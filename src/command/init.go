@@ -10,8 +10,7 @@ func InitCommand() cli.Command {
 		Name:  "init",
 		Usage: "Init container process, used to isolate environments and running the user's command",
 		Action: func(context *cli.Context) error {
-			cmd := context.Args().Get(0)
-			return container.RunContainerInitProcess(cmd)
+			return container.RunContainerInitProcess(context.Args())
 		},
 	}
 }
